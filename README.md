@@ -1,35 +1,39 @@
-# My-Project
+# 🚀 My-Project
 
-A comprehensive cybersecurity platform featuring URL scanning, phishing detection, and user management.
+A comprehensive **cybersecurity platform** featuring URL scanning, phishing detection, and user management. 
 
-## Features
+## ✨ Features
 
-- **URL Scanning**: Advanced URL analysis and threat detection
-- **Phishing Detection**: Machine learning-powered phishing detection using XGBoost
-- **User Authentication**: Secure user registration and login with NextAuth.js
-- **Dashboard**: Real-time monitoring and analytics
-- **Browser Extension**: Chrome extension for on-the-fly URL scanning
-- **API Services**: RESTful API for integrations
+- **🔗 URL Scanning**: Advanced URL analysis and threat detection  
+- **🎣 Phishing Detection**: ML-powered phishing detection using XGBoost  
+- **🔐 User Authentication**: Secure registration and login with NextAuth.js  
+- **📊 Dashboard**: Real-time monitoring and analytics  
+- **🖥️ Browser Extension**: Chrome extension for on-the-fly URL scanning  
+- **🌐 API Services**: RESTful API for integrations  
 
-## Tech Stack
+---
+
+## 🛠️ Tech Stack
 
 ### Frontend (Web)
-- **Framework**: Next.js 14 with App Router
-- **Styling**: Tailwind CSS
-- **Authentication**: NextAuth.js
-- **Database**: Prisma with PostgreSQL
-- **Charts**: Recharts
+- **Framework**: Next.js 14 with App Router  
+- **Styling**: Tailwind CSS  
+- **Authentication**: NextAuth.js  
+- **Database**: Prisma + PostgreSQL  
+- **Charts**: Recharts  
 
 ### Backend (API)
-- **Framework**: Flask
-- **ML Model**: XGBoost for phishing detection
-- **Serialization**: Pickle for model storage
+- **Framework**: Flask  
+- **ML Model**: XGBoost for phishing detection  
+- **Serialization**: Pickle for model storage  
 
 ### Browser Extension
-- **Platform**: Chrome Extension API
-- **UI**: React with TypeScript
+- **Platform**: Chrome Extension API  
+- **UI**: React + TypeScript  
 
-## Project Structure
+---
+
+## 📁 Project Structure
 
 ```
 packages/
@@ -49,18 +53,20 @@ packages/
     └── background.js
 ```
 
-## Getting Started
+## 🏁 Getting Started
 
 ### Prerequisites
-- Node.js 18+
-- Python 3.8+
-- PostgreSQL
-- Git
+- Node.js 18+  
+- Python 3.8+  
+- PostgreSQL  
+- Git  
 
 ### Installation
 
 1. **Clone the repository**
    ```bash
+   git clone https://github.com/yourusername/My-Project.git
+   cd My-Project
    git clone https://github.com/yourusername/My-Project.git
    cd My-Project
    ```
@@ -109,17 +115,17 @@ packages/
    # Click "Load unpacked" and select packages/extension
    ```
 
-## API Endpoints
+## 🔌API Endpoints
 
-### Authentication
+### 🔐Authentication
 - `POST /api/auth/[...nextauth]` - NextAuth.js authentication
 
-### Scanning
+### 👀Scanning
 - `POST /api/predict` - Predict phishing probability
 - `POST /api/get-scan` - Get scan results
 - `POST /api/save-scan` - Save scan results
 
-### User Management
+### 👤User Management
 - `POST /api/user/update-profile` - Update user profile
 - `POST /api/user/accept-terms` - Accept terms of service
 
@@ -129,7 +135,7 @@ packages/
 - `DELETE /api/scan-history/delete-one` - Delete single scan
 - `DELETE /api/scan-history/clear-all` - Clear all scans
 
-## Machine Learning Model
+## 🤖Machine Learning Model
 
 The phishing detection model uses:
 - **Algorithm**: XGBoost Classifier
@@ -137,7 +143,7 @@ The phishing detection model uses:
 - **Training Data**: Balanced dataset of phishing and legitimate URLs
 - **Accuracy**: ~95% on test set
 
-## Contributing
+## 🤝Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -145,11 +151,11 @@ The phishing detection model uses:
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## License
+## 📜License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Security
+## 🔒Security
 
 This project implements various security measures:
 - Input validation and sanitization
@@ -158,9 +164,9 @@ This project implements various security measures:
 - HTTPS enforcement
 - Regular security updates
 
-## Support
+## 💬Support
 
-For support, email support@myproject.com or join our Discord community.
+For support, email ganeshsahu2147@gmail.com
 
 ## Roadmap
 
@@ -169,3 +175,7 @@ For support, email support@myproject.com or join our Discord community.
 - [ ] Integration with SIEM systems
 - [ ] Multi-language support
 - [ ] API rate limiting enhancements
+
+## Made By Ganesh Sahu♥️
+
+
