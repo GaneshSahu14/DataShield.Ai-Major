@@ -23,9 +23,6 @@ import hashlib
 import base64
 from cryptography.fernet import Fernet
 
-# ==========================
-# FastAPI Setup
-# ==========================
 app = FastAPI(
     title="DataShield ML API",
     description="API for phishing detection ML model with extra IP info.",
@@ -47,9 +44,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ==========================
-# Whitelist
-# ==========================
 DOMAIN_WHITELIST = [
     "paypal.com",
     "accounts.google.com",
@@ -73,7 +67,6 @@ DOMAIN_WHITELIST = [
     "amazon.com"
 ]
 
-# Allowlist for trusted hosting providers by their ASN
 ASN_ALLOWLIST = {
     "AS15169": "Google LLC",
     "AS13335": "Cloudflare, Inc.",
@@ -81,12 +74,9 @@ ASN_ALLOWLIST = {
     "AS16509": "Amazon.com, Inc.",
     "AS2906": "Netflix, Inc.",
     "AS36459": "Shopify, Inc.",
-    # Add other major, trusted providers
+  
 }
 
-# ==========================
-# Paths for model & vectorizer
-# ==========================
 BASE_DIR = os.path.dirname(__file__)
 model_path = os.path.join(BASE_DIR, "phishing_xgb_model_FinalModel.pkl")
 vectorizer_path = os.path.join(BASE_DIR, "tfidf_vectorizer.pkl")
@@ -94,12 +84,9 @@ vectorizer_path = os.path.join(BASE_DIR, "tfidf_vectorizer.pkl")
 model = None
 vectorizer = None
 
-# ==========================
-# Load model & vectorizer
-# ==========================
 @app.on_event("startup")
 def load_model():
-    # Force stdout/stderr to use UTF-8 encoding to support emoji in logs on Windows
+
     if sys.stdout.encoding != 'utf-8':
         sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
     if sys.stderr.encoding != 'utf-8':
@@ -108,8 +95,6 @@ def load_model():
     global model, vectorizer
     try:
         with open(vectorizer_path, "rb") as f_vec:
-            # This is a workaround for models saved with older XGBoost versions
-            # that might have the 'use_label_encoder' attribute.
             if not hasattr(xgb.XGBClassifier, 'use_label_encoder'):
                 xgb.XGBClassifier.use_label_encoder = False
 
@@ -119,7 +104,7 @@ def load_model():
             model = joblib.load(f_model)
 
         print("✅ Model and vectorizer loaded successfully.")
-        # Test prediction
+   
         test_url = "https://google.com"
         test_vec = vectorizer.transform([test_url])
         test_pred = model.predict_proba(test_vec)
@@ -142,48 +127,39 @@ def load_model():
         except Exception as mock_error:
             print(f"❌ Failed to create mock model: {mock_error}")
 
-# ==========================
-# Helper Functions
-# ==========================
+
 def extract_domain(url: str) -> str:
     """Extract the root domain from a URL, handling subdomains properly."""
     try:
-        # Clean the URL first
+
         url = url.strip()
 
-        # First, ensure the URL has a scheme
+    
         if not url.startswith(('http://', 'https://')):
             url = 'https://' + url
 
-        # Parse the URL to get the netloc (domain part)
+
         parsed = urlparse(url)
         domain = parsed.netloc.lower()
 
-        # Remove port if present
         if ':' in domain:
             domain = domain.split(':')[0]
 
-        # If domain is empty, try to extract from path or original URL
         if not domain:
-            # This might be a URL without proper scheme, try to extract domain from the original
             original_domain = url.replace("http://", "").replace("https://", "").split("/")[0].split(":")[0].lower()
             if original_domain and '.' in original_domain:
                 domain = original_domain
 
-        # If domain is empty or just an IP, return as is
         if not domain or domain.replace('.', '').isdigit():
             return domain
 
-        # Use tldextract to get the registered domain (root domain)
         extracted = tldextract.extract(domain)
         if extracted.domain and extracted.suffix:
             return f"{extracted.domain}.{extracted.suffix}"
         else:
-            # Fallback to original domain if tldextract fails
             return domain
     except Exception as e:
         print(f"⚠️ Domain extraction failed for {url}: {e}")
-        # Fallback to simple extraction
         domain = url.replace("http://", "").replace("https://", "").split("/")[0].split(":")[0].lower()
         return domain
 
@@ -191,12 +167,9 @@ def get_domain_info(domain: str):
     """Get domain age and status with improved error handling."""
     domain_age_days = None
     domain_status = None
-
-    # Skip whois for empty domains or IPs
     if not domain or domain.replace('.', '').isdigit():
         return domain_age_days, domain_status
 
-    # Try multiple whois servers for better reliability
     whois_servers = [None, 'whois.verisign-grs.com', 'whois.iana.org']
 
     for server in whois_servers:
@@ -206,29 +179,23 @@ def get_domain_info(domain: str):
             else:
                 w = whois.whois(domain)
 
-            # Handle creation_date which can be a list or single date
             if w.creation_date:
                 creation_date = None
                 if isinstance(w.creation_date, list) and len(w.creation_date) > 0:
                     creation_date = w.creation_date[0]
-                elif hasattr(w.creation_date, 'year'):  # datetime object
+                elif hasattr(w.creation_date, 'year'):  
                     creation_date = w.creation_date
 
                 if creation_date and hasattr(creation_date, 'year'):
-                    # Handle timezone-aware vs naive datetime
                     try:
                         domain_age_days = (datetime.now() - creation_date).days
                     except TypeError:
-                        # If timezone mismatch, convert to naive datetime
                         now_naive = datetime.now().replace(tzinfo=None)
                         creation_naive = creation_date.replace(tzinfo=None) if hasattr(creation_date, 'tzinfo') else creation_date
                         domain_age_days = (now_naive - creation_naive).days
 
-            # Get domain status
             if w.status:
                 domain_status = w.status
-
-            # If we got some data, break
             if domain_age_days is not None or domain_status is not None:
                 break
 
@@ -252,7 +219,6 @@ def get_ip_location_info(ip_address: str):
             resp.raise_for_status()
             data = resp.json()
 
-            # Handle different API response formats
             if data.get("status") == "success" or "country" in data:
                 asn = data.get("as") or data.get("asn") or "N/A"
                 hosting = data.get("isp") or data.get("org") or data.get("organization") or "N/A"
@@ -274,7 +240,6 @@ def get_ip_location_info(ip_address: str):
             print(f"⚠️ IP API {api_url} failed: {e}")
             continue
 
-    # Return defaults if all APIs fail
     return {
         "asn": "N/A",
         "hosting_provider": "N/A",
@@ -282,9 +247,6 @@ def get_ip_location_info(ip_address: str):
         "country_code": None
     }
 
-# ==========================
-# Request & Response Schemas
-# ==========================
 class ScanRequest(BaseModel):
     url: str
 
@@ -304,9 +266,6 @@ class ScanResponse(BaseModel):
     error: str | None = None
     trust_score: float | None = None
 
-# ==========================
-# Routes
-# ==========================
 @app.get("/")
 def read_root():
     return {"status": "API is running 🚀"}
@@ -317,11 +276,9 @@ async def predict(request: ScanRequest):
         raise HTTPException(status_code=503, detail="Model or vectorizer not loaded.")
 
     try:
-        # Extract the root domain properly
         domain = extract_domain(request.url)
         print(f"🔍 Extracted domain: {domain}")
 
-        # ---------- IP / Hosting / Location Info ----------
         ip_address = "N/A"
         location_info = {
             "asn": "N/A",
@@ -331,14 +288,11 @@ async def predict(request: ScanRequest):
         }
 
         try:
-            # Get IP address with better error handling
             try:
                 addr_info = socket.getaddrinfo(domain, None)
-                # Try to get the primary IPv4 address
                 for addr in addr_info:
                     if addr[0] == socket.AF_INET:  # IPv4
                         ip_address = addr[4][0]
-                        # Skip private IPs (10.x.x.x, 172.16-31.x.x, 192.168.x.x, 127.x.x.x)
                         if (ip_address.startswith('10.') or
                             (ip_address.startswith('172.') and 16 <= int(ip_address.split('.')[1]) <= 31) or
                             ip_address.startswith('192.168.') or
@@ -347,9 +301,7 @@ async def predict(request: ScanRequest):
                             ip_address = "N/A"
                         break
                 else:
-                    # Fallback to gethostbyname if no IPv4 found
                     ip_address = socket.gethostbyname(domain)
-                    # Check for private IP again
                     if (ip_address.startswith('10.') or
                         (ip_address.startswith('172.') and 16 <= int(ip_address.split('.')[1]) <= 31) or
                         ip_address.startswith('192.168.') or
@@ -360,27 +312,22 @@ async def predict(request: ScanRequest):
                 print(f"⚠️ DNS resolution failed for {domain}: {e}")
                 ip_address = "N/A"
 
-            # Get location info if we have an IP
             if ip_address != "N/A":
                 location_info = get_ip_location_info(ip_address)
 
         except Exception as e:
             print(f"⚠️ IP/location lookup failed for {domain}: {e}")
 
-        # Extract location data
         asn = location_info["asn"]
         hosting = location_info["hosting_provider"]
         location = location_info["location"]
         country_code = location_info["country_code"]
-
-        # ---------- Domain Age & Status Info ----------
         domain_age_days, domain_status = get_domain_info(domain)
-
-        # ---------- ASN Allowlist Check ----------
+        
         if asn and asn.split(' ')[0] in ASN_ALLOWLIST:
             return ScanResponse(
                 prediction="Safe",
-                confidence=0.0, # 0% unsafe since it's from a trusted provider
+                confidence=0.0, 
                 domain=domain,
                 safe_percentage=100.0,
                 unsafe_percentage=0.0,
@@ -393,8 +340,6 @@ async def predict(request: ScanRequest):
                 domainStatus=domain_status,
                 trust_score=0.0,
             )
-
-        # ---------- Whitelist Check ----------
         is_whitelisted = any(domain.endswith(whitelisted_domain) for whitelisted_domain in DOMAIN_WHITELIST)
         if is_whitelisted:
             return ScanResponse(
@@ -412,28 +357,20 @@ async def predict(request: ScanRequest):
                 domainStatus=domain_status,
                 trust_score=0.0,
             )
-
-        # ---------- ML Prediction ----------
+            
         print(f"🔍 Predicting for URL: {request.url}")
         url_vectorized = vectorizer.transform([request.url])
         print(f"📊 Vectorized shape: {url_vectorized.shape}")
         prediction_proba = model.predict_proba(url_vectorized)
         print(f"🎯 Prediction probabilities: {prediction_proba}")
         print(f"🏷️ Model classes: {model.classes_}")
-        unsafe_confidence = prediction_proba[0][1]  # phishing probability
-
-        # Use a more conservative threshold to reduce false positives
-        threshold = 0.7  # Increased from 0.5 to 0.7 for more conservative predictions
+        unsafe_confidence = prediction_proba[0][1]  
+        threshold = 0.7  
         prediction_label = "Unsafe" if unsafe_confidence > threshold else "Safe"
-
-        # ---------- Heuristic Boost for New Domains ----------
-        # If the model is not very confident, but the domain is very new,
-        # it's likely a phishing site that the model hasn't seen before.
+        
         if domain_age_days is not None and domain_age_days < 30:
-            # If model is unsure, but domain is new, be more cautious.
             if prediction_label == "Safe" and unsafe_confidence < 0.8:
                 print(f"📈 Boosting confidence for new domain (Age: {domain_age_days} days)")
-                # Increase confidence, but don't flip to Unsafe unless it was already borderline
                 unsafe_confidence = max(unsafe_confidence, 0.75) 
                 if unsafe_confidence > threshold:
                     prediction_label = "Unsafe"
@@ -459,10 +396,7 @@ async def predict(request: ScanRequest):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Prediction error: {str(e)}")
-
-# ==========================
-# New Feature Schemas
-# ==========================
+        
 class ThreatFeedResponse(BaseModel):
     source: str
     title: str
@@ -503,15 +437,12 @@ class MessageResponse(BaseModel):
     content: str
     timestamp: datetime
 
-# ==========================
-# New Feature Routes
-# ==========================
 @app.get("/threat-feeds")
 async def get_threat_feeds():
     """Fetch live threat intelligence from RSS feeds."""
     feeds = []
     rss_urls = [
-        "https://feeds.feedburner.com/TheHackersNews",  # Example RSS feeds
+        "https://feeds.feedburner.com/TheHackersNews", 
         "https://www.phishtank.com/phishtank.rss",
         "https://cve.mitre.org/feeds/cve/cve.xml"
     ]
@@ -519,12 +450,12 @@ async def get_threat_feeds():
     for url in rss_urls:
         try:
             feed = feedparser.parse(url)
-            for entry in feed.entries[:5]:  # Limit to 5 entries per feed
+            for entry in feed.entries[:5]:  
                 feeds.append(ThreatFeedResponse(
                     source=feed.feed.title if hasattr(feed.feed, 'title') else url,
                     title=entry.title,
                     url=entry.link,
-                    severity="medium",  # Placeholder
+                    severity="medium",  
                     published=datetime.fromisoformat(entry.published_parsed.isoformat()) if hasattr(entry, 'published_parsed') else datetime.now()
                 ))
         except Exception as e:
@@ -535,7 +466,6 @@ async def get_threat_feeds():
 @app.get("/gamification/achievements/{userId}")
 async def get_user_achievements(userId: str):
     """Get user achievements and points."""
-    # Mock data - in real implementation, fetch from database
     achievements = [
         AchievementResponse(
             type="badge",
@@ -574,14 +504,12 @@ async def get_personalized_insights(userId: str):
 @app.post("/parental-controls/{userId}")
 async def update_parental_controls(userId: str, request: ParentalControlRequest):
     """Update parental control settings."""
-    # Mock implementation - save to database
     return {"status": "Parental controls updated", "userId": userId}
 
 @app.get("/privacy-scores/{url}")
 async def get_privacy_score(url: str):
     """Calculate privacy score for a site."""
-    # Mock privacy analysis
-    score = 75  # Example score
+    score = 75  
     trackers = ["Google Analytics", "Facebook Pixel"]
     cookies = ["session_id", "preferences"]
     return PrivacyScoreResponse(score=score, trackers=trackers, cookies=cookies)
@@ -589,18 +517,16 @@ async def get_privacy_score(url: str):
 @app.post("/scheduled-checkups/{userId}")
 async def schedule_checkup(userId: str, frequency: str):
     """Schedule automated security checkups."""
-    # Mock scheduling
     next_run = datetime.now() + timedelta(days=7 if frequency == "weekly" else 1)
     return {"status": "Checkup scheduled", "nextRun": next_run}
 
 @app.post("/secure-messaging/send")
 async def send_secure_message(request: MessageRequest):
     """Send encrypted message using Signal Protocol."""
-    # Mock encryption
     encrypted_content = base64.b64encode(request.content.encode()).decode()
     return MessageResponse(
         id="msg_123",
-        senderId="user_123",  # Mock
+        senderId="user_123", 
         receiverId=request.receiverId,
         content=encrypted_content,
         timestamp=datetime.now()
@@ -609,8 +535,8 @@ async def send_secure_message(request: MessageRequest):
 @app.post("/voice-commands/process")
 async def process_voice_command(audio_data: str):
     """Process voice commands using Web Speech API."""
-    # Mock voice recognition
-    command = "scan current site"  # Example
+    
+    command = "scan current site"  
     return {"command": command, "confidence": 0.95}
 
 @app.get("/offline-kit")
@@ -625,5 +551,4 @@ async def get_offline_kit():
 @app.post("/security-devices/{userId}/register")
 async def register_security_device(userId: str, device_type: str, name: str):
     """Register YubiKey or TOTP device."""
-    # Mock device registration
     return {"status": "Device registered", "deviceId": "dev_123", "type": device_type}
