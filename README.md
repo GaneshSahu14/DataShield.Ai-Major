@@ -176,6 +176,6 @@ For support, email ganeshsahu2147@gmail.com
 - [ ] Multi-language support
 - [ ] API rate limiting enhancements
 
-## Made By Ganesh Sahu♥️
+ 
 
 
